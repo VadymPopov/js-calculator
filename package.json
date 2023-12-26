@@ -1,6 +1,6 @@
 {
-  "name": "vite-react-template",
-  "homepage": "https://VadymPopov.github.io/vite-react-template/",
+  "name": "js-calculator",
+  "homepage": "https://VadymPopov.github.io/js-calculator/",
   "private": true,
   "version": "0.0.0",
   "type": "module",
