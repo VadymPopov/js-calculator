@@ -42,7 +42,7 @@ grid-row-gap: 10px;
 #nine { grid-area: 2 / 3 / 3 / 4; }
 
 
-.operators, #equals {
+.operators, .equals {
   background-color: #ff9503; 
   color: #fff;
   
@@ -50,18 +50,27 @@ grid-row-gap: 10px;
       background-color: #fff;
       color: #ff9503;
   }
-  }
+}
+
+.operators-hover {
+  background-color: #fff;
+  color: #ff9503;
+}
   
-  #clear {
+.clear {
   background-color: #a5a5a5;
   color: #1c1c1c;
   
   &:hover, :focus {
       opacity: 0.25;
   }
-  }
+}
+
+.clear-hover {
+  opacity: 0.25;
+}
   
-  .numbers, #decimal {
+.numbers, .decimal {
   background-color: #333;
   color: #fff;
   
@@ -70,8 +79,13 @@ grid-row-gap: 10px;
      color: #000;
   }
   }
+
+.numbers-hover {
+    background-color: #fff;
+    color: #000;
+  }
   
-  .dev {
+.dev {
   margin-top: 10px;
   margin-left: 30px;
   color: #fff;

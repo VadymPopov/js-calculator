@@ -1,7 +1,6 @@
 import { Component } from "react";
 import './App.css';
-import { numbers, operators, ops } from "./helpers";
-
+import { numbers, operators, ops, numbersArray } from "./helpers";
 
 class App extends Component {
   constructor(props) {
@@ -11,7 +10,8 @@ class App extends Component {
       currentValue: "",
       previousValue: "",
       operator: undefined,
-      fontSize: 30
+      fontSize: 30,
+      keyPressed: ""
     }
 
     this.onBtnClick = this.onBtnClick.bind(this);
@@ -19,12 +19,33 @@ class App extends Component {
     this.onEquals = this.onEquals.bind(this);
     this.onOperatorClick = this.onOperatorClick.bind(this);
     this.handleKeyDown = this.handleKeyDown.bind(this);
+    this.handleKeyUp = this.handleKeyUp.bind(this);
+    this.onRemove = this.onRemove.bind(this);
   }
 
   handleKeyDown(e) {
-    console.log(e.key);
-    this.onBtnClick(e);
-  }
+    this.setState(()=>({
+      keyPressed: e.key
+    }));
+
+    if(numbersArray.includes(e.key)){
+      this.onBtnClick(e);
+    } else if (ops.includes(e.key)){
+      this.onOperatorClick(e);
+    } else if(e.key === 'Enter' || e.key === '='){
+      this.onEquals();
+    } else if(e.key === 'Delete'){
+      this.onClear();
+    } else if(e.key === 'Backspace'){
+      this.onRemove();
+    }
+}
+
+  handleKeyUp(){
+    this.setState(()=>({
+        keyPressed: ""
+  }));
+}
 
   onBtnClick(e) {
     let num;
@@ -34,14 +55,11 @@ class App extends Component {
       num = e.key;
     }
 
-    console.log(num);
-
-    
     if(num === "." && this.state.currentValue.includes(".")) return;
     
-    this.setState(prevState=>({
-      input: prevState.input  === "0" ? num : prevState.input + num,
-      currentValue: prevState.currentValue + num,
+    this.setState(({input, currentValue})=>({
+      input: input  === "0" ? num : input + num,
+      currentValue: currentValue + num,
     }))
   }
   
@@ -54,62 +72,64 @@ class App extends Component {
       fontSize: 30,
     })
   }
-  
+
   onOperatorClick(e) {
+    const {currentValue, input, previousValue} = this.state;
+
     let operator;
     if(e.type === "click") {
       operator = e.target.textContent;
     } else {
       operator = e.key;
     }
-     
-    if(ops.includes(operator) && this.state.currentValue === "" || ops.includes(operator) && ops.includes(this.state.input.slice(-1))){
-      if(operator !== '-') {
-      this.setState(prevState =>({
+
+    if(currentValue === "" && ops.includes(input.slice(-1))) {
+      if(operator !== "-") {
+        if(ops.includes(input.slice(-2,-1))) return;
+      this.setState(({input, currentValue})=>({
         operator,
-        input: prevState.input.slice(0, prevState.input.length - 1).concat(operator),
-        currentValue: prevState.currentValue.replace("-", "")
+        input:  input.slice(0,-1).concat(operator),
+        currentValue: currentValue.replace('-', ''),
       }));
-        return;
-      }
-      
-       this.setState(prevState =>({
-        input: prevState.input + operator,
-        currentValue: prevState.currentValue + operator
-      }))
-        return;
+      return;
     }
+
+    if(input.slice(-1) === "-") return;
+  }
     
-    if(this.state.previousValue !== "") {
+    if(previousValue !== "") {
       this.calculate()
     }
     
-    this.setState((prevState)=>({
-      previousValue: prevState.currentValue,
+    this.setState(({currentValue, input})=>({
+      previousValue: currentValue,
       operator,
-      input: prevState.input + operator,
+      input: input + operator,
       currentValue: ""
     }))
-}
+  }
                     
   onEquals() {
+    if(!this.state.currentValue) return;
    this.calculate();
 
-   this.setState((prevState)=>({
-      input: prevState.currentValue.toString(),
-      currentValue: prevState.currentValue.toString(),
-      previousValue: prevState.currentValue,
+   this.setState(({currentValue})=>({
+      input: currentValue,
+      currentValue: currentValue,
+      previousValue: currentValue,
     }))
   }
   
   calculate() {
+    const {currentValue, previousValue, operator} = this.state;
+
     let computation;
-    const prev = parseFloat(this.state.previousValue);
-    const curr = parseFloat(this.state.currentValue);
+    const prev = parseFloat(previousValue);
+    const curr = parseFloat(currentValue);
      
     if(isNaN(prev) || isNaN(curr)) return;
      
-    switch(this.state.operator){
+    switch(operator){
        case "+":
          computation = prev + curr;
          break;
@@ -127,14 +147,29 @@ class App extends Component {
      }
      
      this.setState({
-      currentValue: computation,
+      currentValue: computation.toString(),
       previousValue: "",
       operator: undefined,
      })    
   }
 
+  onRemove(){
+    this.setState(({input, currentValue, previousValue, operator})=>({
+      input: input.slice(0, input.length - 1),
+      currentValue: currentValue ? currentValue.slice(0, -1) : '',
+      previousValue: !currentValue && !operator ? previousValue.slice(0, previousValue.length - 1) : previousValue,
+      operator: ops.includes(input.slice(-1)) ? ops.includes(input.slice(-2,-1)) ? input.slice(-2,-1) : '' : operator,
+    }))
+  }
+
   componentDidMount() {
-    window.addEventListener('keydown', this.handleKeyDown);
+    document.addEventListener('keydown', this.handleKeyDown);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+      }
+    });
+    document.addEventListener('keyup', this.handleKeyUp);
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -149,22 +184,23 @@ class App extends Component {
           this.setState(prevState => ({ fontSize: prevState.fontSize - 5 })); 
         }
       }
+    
     }
   }
   
   render() {    
+    const { fontSize, keyPressed, input } = this.state;
 
-    const { fontSize } = this.state;
     return (
       <div className='calculator'>
-        <div className='display' id='display' style={{ fontSize: `${fontSize}px` }}>{this.state.input ?  this.state.input : "0"}</div>
+        <div className='display' id='display' style={{ fontSize: `${fontSize}px` }}>{input ? input : "0"}</div>
        
         <div className='buttons'>
-          <button id='equals' onClick={this.onEquals}>=</button>
-          <button id='decimal' onClick={this.onBtnClick}>.</button>
-          <button id='clear' onClick={this.onClear}>C</button>
-          {operators.map(({val,id})=><button className='operators' key={id} id={id} onClick={this.onOperatorClick}>{val}</button>)}
-          {numbers.map(({num,id})=><button key={id} id={id} className='numbers' onClick={this.onBtnClick}>{num}</button>)}
+          <button id='equals' className={keyPressed === '=' ||  keyPressed === 'Enter' ? 'operators-hover' : 'equals'} onClick={this.onEquals}>=</button>
+          <button id='decimal' className={keyPressed === '.' ? 'numbers-hover' : 'decimal'} onClick={this.onBtnClick}>.</button>
+          <button id='clear' className={keyPressed === 'Delete' ? 'clear-hover' : 'clear'} onClick={this.onClear}>C</button>
+          {operators.map(({val,id})=><button className={keyPressed === `${val}` ? 'operators-hover' : 'operators'} key={id} id={id} onClick={this.onOperatorClick}>{val}</button>)}
+          {numbers.map(({num,id})=><button key={id} id={id} className={keyPressed === `${num}` ? 'numbers-hover' : 'numbers'} onClick={this.onBtnClick}>{num}</button>)}
         </div>
         <div className="dev">by <a href="https://github.com/VadymPopov/js-calculator" target="_blank" rel="noreferrer">Vadym Popov</a></div>
         </div>
